@@ -356,35 +356,33 @@
             button.innerText = btn.name;
             
             button.onclick = async () => {
-                try {
-                    loading.style.visibility = 'visible';
-                    loading.style.opacity = '1';
+    try {
+        loading.style.visibility = 'visible';
+        loading.style.opacity = '1';
 
-                    const res = await fetch(prefix + btn.file);
-                    if (!res.ok) throw new Error("Network response was not ok");
-                    const html = await res.text();
+        // Always fetch latest
+        const url = prefix + btn.file + "?v=" + Date.now();
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Network response was not ok");
+        const html = await res.text();
 
-                    const win = window.open("about:blank", "_blank");
-                    if (!win) {
-                        showPopup();
-                        return;
-                    }
-                    win.document.open();
-                    win.document.write(html);
-                    win.document.close();
+        const win = window.open(url, "_blank"); // pass URL so future reloads are possible
+        if (!win) {
+            showPopup();
+            return;
+        }
+        win.document.open();
+        win.document.write(html);
+        win.document.close();
 
-                } catch (err) {
-                    console.error(err);
-                    const errorBox = document.createElement('div');
-                    errorBox.style.cssText = "position:fixed; bottom:20px; background:rgba(255,50,50,0.9); color:white; padding:15px 25px; border-radius:12px; z-index:1000; box-shadow: 0 10px 20px rgba(0,0,0,0.3); font-weight:bold;";
-                    errorBox.innerText = "Error: Could not load " + btn.name;
-                    document.body.appendChild(errorBox);
-                    setTimeout(() => errorBox.remove(), 4000);
-                } finally {
-                    loading.style.opacity = '0';
-                    setTimeout(() => loading.style.visibility = 'hidden', 400);
-                }
-            };
+    } catch (err) {
+        console.error(err);
+        // ... error handling
+    } finally {
+        loading.style.opacity = '0';
+        setTimeout(() => loading.style.visibility = 'hidden', 400);
+    }
+};
             return button;
         }
 
