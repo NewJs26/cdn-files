@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML File Launcher</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f2f5;
+        }
+        .container {
+            padding: 30px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+        }
+        input, button {
+            margin-top: 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>HTML Launcher</h2>
+    <p>Select an <b>.html</b> file to open in a new tab.</p>
+    
+    <input type="file" id="fileInput" accept=".html, .htm">
+    
+    <button onclick="launchFile()">Launch HTML</button>
+</div>
+
+<script>
+    function launchFile() {
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+
+        // 1. Check if a file was selected
+        if (!file) {
+            alert("Please select a file.");
+            return;
+        }
+
+        // 2. Strict validation check for .html extension
+        if (!file.name.toLowerCase().endsWith('.html') && !file.name.toLowerCase().endsWith('.htm')) {
+            alert("Only .html or .htm files are allowed.");
+            fileInput.value = ""; // Clear the input
+            return;
+        }
+
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const fileContent = e.target.result;
+
+            // Create the new tab
+            const newWindow = window.open('about:blank', '_blank');
+
+            if (newWindow) {
+                // Direct injection into the blank document
+                newWindow.document.open();
+                newWindow.document.write(fileContent);
+                newWindow.document.close();
+            } else {
+                alert("Pop-up blocked! Please allow pop-ups.");
+            }
+        };
+
+        reader.readAsText(file);
+    }
+</script>
+
+</body>
+</html>
