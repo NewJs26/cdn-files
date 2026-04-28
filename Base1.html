@@ -162,7 +162,7 @@
 <div id="container">
     <header>
         <div class="logo">BASE1AI</div>
-        <div style="font-size: 0.65rem; color: var(--text-dim);">V 3.1 REV 8B</div>
+        <div style="font-size: 0.65rem; color: var(--text-dim);">V 3.2 REV 8B</div>
     </header>
 
     <div id="chat"></div>
@@ -172,12 +172,13 @@
             <input id="input" autocomplete="off" placeholder="Input command..." onkeydown="if(event.key==='Enter') send()">
             <button id="sendBtn" onclick="send()">RUN</button>
         </div>
-        <div class="footer-meta">MODEL: BASE1AI-3.1-8B | COOLDOWN: 2.0S</div>
+        <div class="footer-meta">MODEL: BASE1AI-3.2-8B | COOLDOWN: 2.0S</div>
     </div>
 </div>
 
 <script>
     const API_KEY = "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";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indzendoc250c2xuZG1rbGNtbGZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2OTM1ODYsImV4cCI6MjA4OTI2OTU4Nn0.YhW6Zx9QBtoP1-Jt3V62tiWj0VIsq2x4U2Fbsr7ZMWU";
     let lastRequestTime = 0;
     const COOLDOWN = 2000;
     let isGenerating = false;
@@ -289,7 +290,9 @@
             const res = await fetch("https://wszwhsntslndmklcmlfz.supabase.co/functions/v1/chat", {
     method: "POST",
     headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "apikey": SUPABASE_ANON_KEY
     },
     body: JSON.stringify({
         messages: history
