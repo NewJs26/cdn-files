@@ -286,17 +286,15 @@
         history.push({ role: "user", content: text });
 
         try {
-            const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Authorization": "Bearer " + API_KEY,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                model: "llama-3.1-8b-instant",
-                messages: history
-            })
-        });
+            const res = await fetch("https://wszwhsntslndmklcmlfz.supabase.co/functions/v1/chat", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+        messages: history
+    })
+});
         
         let data;
         try {
