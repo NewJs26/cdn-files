@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudVault | Supabase</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #f4f7f6;
+            --card: #ffffff;
+            --text: #1a202c;
+            --primary: #3ecf8e;
+            --primary-hover: #36b37a;
+            --border: #e2e8f0;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f7fafc;
+            --border: #334155;
+            --shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        body { 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            background: var(--bg); 
+            color: var(--text);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0; transition: background 0.3s;
+        }
+
+        .main-wrapper {
+            display: flex; gap: 20px; width: 95%; max-width: 900px; flex-wrap: wrap; justify-content: center;
+        }
+
+        .container {
+            flex: 1; min-width: 320px; max-width: 450px; padding: 25px;
+            background: var(--card); border-radius: 20px;
+            box-shadow: var(--shadow); border: 1px solid var(--border);
+        }
+
+        .preview-panel {
+            flex: 0.8; min-width: 300px; max-width: 400px; padding: 25px;
+            background: var(--card); border-radius: 20px;
+            box-shadow: var(--shadow); border: 1px solid var(--border);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; position: relative;
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        #themeToggle { background: none; border: none; color: var(--text); cursor: pointer; font-size: 1.2rem; }
+
+        .upload-zone {
+            border: 2px dashed var(--border); border-radius: 12px;
+            padding: 20px; text-align: center; margin-bottom: 20px;
+        }
+
+        input[type="file"] { display: none; }
+        .custom-label { display: block; cursor: pointer; padding: 10px; color: var(--primary); font-weight: 600; }
+
+        button {
+            width: 100%; padding: 12px; border-radius: 10px; border: none;
+            background: var(--primary); color: white; font-weight: bold;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+
+        button:hover { background: var(--primary-hover); transform: translateY(-1px); }
+        .btn-secondary { background: var(--text); color: var(--card); margin-top: 15px; }
+
+        .file-box {
+            height: 200px; overflow-y: auto; border: 1px solid var(--border);
+            border-radius: 10px; margin-top: 10px; background: rgba(0,0,0,0.02);
+        }
+
+        .file-item {
+            padding: 12px 15px; border-bottom: 1px solid var(--border);
+            cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s;
+        }
+
+        .file-item:hover { background: rgba(62, 207, 142, 0.1); }
+        .file-item.selected { background: var(--primary); color: white; }
+
+        /* Preview Elements */
+        .preview-img { 
+            max-width: 100%; max-height: 250px; border-radius: 10px; 
+            object-fit: contain; margin-top: 15px; display: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .file-icon-lg { font-size: 80px; color: var(--primary); margin-bottom: 15px; }
+        .preview-placeholder { opacity: 0.5; font-size: 0.9rem; }
+
+        #toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            padding: 12px 25px; border-radius: 30px; color: white;
+            font-size: 0.9rem; opacity: 0; transition: opacity 0.3s; z-index: 1000;
+        }
+
+        .loader { animation: spin 1s linear infinite; display: none; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body data-theme="light">
+
+    <div class="main-wrapper">
+        <!-- Main Controls -->
+        <div class="container">
+            <div class="header">
+                <h2 style="margin:0;"><i class="fas fa-vault" style="color:var(--primary)"></i> Vault</h2>
+                <button id="themeToggle" onclick="toggleTheme()"><i class="fas fa-moon"></i></button>
+            </div>
+
+            <div class="upload-zone">
+                <label for="fileInput" class="custom-label">
+                    <i class="fas fa-file-import fa-2x"></i><br>
+                    <span id="fileLabel">Choose Local File</span>
+                </label>
+                <input type="file" id="fileInput" onchange="handleLocalPreview()">
+                <button onclick="uploadFile()" id="uploadBtn">
+                    <i class="fas fa-cloud-arrow-up" id="btnIcon"></i>
+                    <i class="fas fa-circle-notch loader" id="btnLoader"></i>
+                    <span id="btnText">Push to Cloud</span>
+                </button>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <h4 style="margin:0 0 10px 0;">Cloud Records</h4>
+                <div class="file-box" id="fileContainer"></div>
+                <button onclick="downloadFile()" class="btn-secondary">
+                    <i class="fas fa-download"></i> Get Selected
+                </button>
+            </div>
+        </div>
+
+        <!-- Preview Side Panel -->
+        <div class="preview-panel">
+            <div id="previewContent">
+                <i class="fas fa-eye file-icon-lg preview-placeholder"></i>
+                <p class="preview-placeholder">Select a file to preview</p>
+            </div>
+            <img id="imagePreview" class="preview-img">
+            <div id="fileInfo" style="margin-top: 15px; font-weight: bold; font-size: 0.9rem;"></div>
+        </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+        const SUPABASE_URL = 'https://ifydybzhdlannfxtrdzn.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmeWR5YnpoZGxhbm5meHRyZHpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MzYwMTMsImV4cCI6MjA5MzUxMjAxM30.4yr2Lfavjsaz7Rk8HZiogK-h4DgNzZObdWGwoVA6ohw';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const BUCKET = 'files';
+        let selectedFileName = null;
+
+        function toggleTheme() {
+            const body = document.body;
+            const next = body.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+            body.setAttribute('data-theme', next);
+            document.getElementById('themeToggle').innerHTML = next === 'light' ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
+        }
+
+        function notify(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.style.background = type === 'success' ? '#3ecf8e' : '#f87171';
+            toast.style.opacity = '1';
+            setTimeout(() => toast.style.opacity = '0', 3000);
+        }
+
+        // PREVIEW LOGIC: Local File
+        function handleLocalPreview() {
+            const file = document.getElementById('fileInput').files[0];
+            if (!file) return;
+            
+            document.getElementById('fileLabel').innerText = file.name;
+            showPreview(file, `Local: ${file.name}`);
+        }
+
+        // PREVIEW LOGIC: Cloud File
+        async function handleCloudPreview(fileName) {
+            selectedFileName = fileName;
+            document.querySelectorAll('.file-item').forEach(el => {
+                el.classList.toggle('selected', el.innerText.trim() === fileName);
+            });
+
+            const { data, error } = await supabaseClient.storage.from(BUCKET).download(fileName);
+            if (!error) showPreview(data, `Cloud: ${fileName}`);
+        }
+
+        function showPreview(fileBlob, label) {
+            const img = document.getElementById('imagePreview');
+            const content = document.getElementById('previewContent');
+            const info = document.getElementById('fileInfo');
+            
+            info.innerText = label;
+            
+            if (fileBlob.type.startsWith('image/')) {
+                const url = URL.createObjectURL(fileBlob);
+                img.src = url;
+                img.style.display = 'block';
+                content.style.display = 'none';
+            } else {
+                img.style.display = 'none';
+                content.style.display = 'block';
+                content.innerHTML = `<i class="fas fa-file-code file-icon-lg"></i><p>${fileBlob.type || 'Binary File'}</p>`;
+            }
+        }
+
+        async function refreshFiles() {
+            const container = document.getElementById('fileContainer');
+            container.innerHTML = '<div style="padding:20px; text-align:center;">Syncing...</div>';
+
+            const { data, error } = await supabaseClient.storage.from(BUCKET).list();
+            if (error) return notify("Auth/Policy Error", 'error');
+
+            const now = new Date();
+            const validFiles = data.filter(f => {
+                if (f.name === '.emptyFolderPlaceholder') return false;
+                const diff = Math.ceil(Math.abs(now - new Date(f.created_at)) / (86400000));
+                return diff <= 10;
+            });
+
+            container.innerHTML = validFiles.length ? '' : '<p style="text-align:center; opacity:0.5;">Empty Vault</p>';
+            
+            validFiles.forEach(file => {
+                const div = document.createElement('div');
+                div.className = 'file-item';
+                div.innerHTML = `<i class="far fa-file"></i> <span>${file.name}</span>`;
+                div.onclick = () => handleCloudPreview(file.name);
+                container.appendChild(div);
+            });
+        }
+
+        async function uploadFile() {
+            const input = document.getElementById('fileInput');
+            if (!input.files.length) return notify("No file chosen", 'error');
+
+            const btn = document.getElementById('uploadBtn');
+            btn.disabled = true;
+            document.getElementById('btnIcon').style.display = 'none';
+            document.getElementById('btnLoader').style.display = 'inline-block';
+
+            const file = input.files[0];
+            const { error } = await supabaseClient.storage.from(BUCKET).upload(file.name, file, { upsert: true });
+
+            btn.disabled = false;
+            document.getElementById('btnIcon').style.display = 'inline-block';
+            document.getElementById('btnLoader').style.display = 'none';
+
+            if (error) notify(error.message, 'error');
+            else {
+                notify("Sync Complete");
+                refreshFiles();
+            }
+        }
+
+        async function downloadFile() {
+            if (!selectedFileName) return notify("Select a file first", 'error');
+            const { data, error } = await supabaseClient.storage.from(BUCKET).download(selectedFileName);
+            if (error) return;
+
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(data);
+            a.download = selectedFileName;
+            a.click();
+        }
+
+        window.onload = refreshFiles;
+    </script>
+</body>
+</html>
